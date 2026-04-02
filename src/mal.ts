@@ -63,8 +63,14 @@ export interface MalAnime {
   broadcast?: { day_of_week?: string; start_time?: string };
 }
 
+export interface ListStatus {
+  status?: string;
+  score?: number;
+  num_episodes_watched?: number;
+}
+
 export interface MalListResponse {
-  data: Array<{ node: MalAnime }>;
+  data: Array<{ node: MalAnime; list_status?: ListStatus }>;
   paging?: { next?: string };
 }
 
@@ -158,7 +164,7 @@ export class MalClient {
     }
     const params: Record<string, string> = {
       limit: String(Math.min(Math.max(1, limit), 100)),
-      fields: LIST_FIELDS,
+      fields: `${LIST_FIELDS},list_status{status,score,num_episodes_watched}`,
     };
     if (status !== undefined) {
       params.status = status;

@@ -1,4 +1,4 @@
-import { MalClient, MalAnime, MalListResponse } from "./mal.js";
+import { MalClient, MalAnime, MalListResponse, ListStatus } from "./mal.js";
 
 export interface McpTool {
   name: string;
@@ -146,10 +146,17 @@ function formatAnimeList(res: MalListResponse): string {
   return res.data
     .map((item, i) => {
       const a = item.node;
+      const ls: ListStatus | undefined = item.list_status;
       const cover = a.main_picture?.medium ?? "N/A";
+      const scoreStr = ls
+        ? `Your score: ${ls.score ?? "–"} | Global score: ${a.mean ?? "N/A"}`
+        : `Score: ${a.mean ?? "N/A"}`;
+      const watchStr = ls
+        ? ` | Watch status: ${ls.status ?? "?"} | Watched: ${ls.num_episodes_watched ?? 0}/${a.num_episodes ?? "?"} eps`
+        : ` | Episodes: ${a.num_episodes ?? "?"} | Status: ${a.status ?? "?"}`;
       return [
         `${i + 1}. ${a.title} (ID: ${a.id})`,
-        `   Score: ${a.mean ?? "N/A"} | Episodes: ${a.num_episodes ?? "?"} | Status: ${a.status ?? "?"} | Type: ${a.media_type ?? "?"}`,
+        `   ${scoreStr}${watchStr} | Type: ${a.media_type ?? "?"}`,
         `   Cover: ${cover}`,
         a.synopsis
           ? `   Synopsis: ${a.synopsis.slice(0, 200)}${a.synopsis.length > 200 ? "…" : ""}`
