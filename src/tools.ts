@@ -110,7 +110,7 @@ export const TOOL_DEFINITIONS: McpTool[] = [
   {
     name: "mal_get_user_list",
     description:
-      "Fetch a public MyAnimeList user's anime list, optionally filtered by watch status.",
+      "Fetch a public MyAnimeList user's anime list with personal scores. Use fetch_all=true to retrieve the complete list regardless of size (up to 2000 entries). Otherwise returns up to 100 entries.",
     inputSchema: {
       type: "object",
       properties: {
@@ -129,9 +129,15 @@ export const TOOL_DEFINITIONS: McpTool[] = [
             "plan_to_watch",
           ],
         },
+        fetch_all: {
+          type: "boolean",
+          description:
+            "Set to true to fetch the user's complete list (paginates automatically). Default false returns up to 100 entries.",
+        },
         limit: {
           type: "integer",
-          description: "Number of results to return (1–100, default 25)",
+          description:
+            "Number of entries to return when fetch_all is false (1–100, default 100). Ignored when fetch_all is true.",
         },
       },
       required: ["username"],
@@ -237,11 +243,14 @@ export async function callTool(
 
     case "mal_get_user_list": {
       const username = args.username as string;
-      const status =
-        typeof args.status === "string" ? args.status : undefined;
-      const limit = typeof args.limit === "number" ? args.limit : 25;
-      const res = await mal.getUserList(username, status, limit);
-      return formatAnimeList(res);
+      const status = typeof args.status === "string" ? args.status : undefined;
+      const fetchAll = args.fetch_all === true;
+      const limit = typeof args.limit === "number" ? args.limit : 100;
+      const res = await mal.getUserList(username, status, limit, fetchAll);
+      const totalNote = fetchAll
+        ? `\nTotal entries fetched: ${res.data.length}\n`
+        : "";
+      return totalNote + formatAnimeList(res);
     }
 
     default:

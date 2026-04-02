@@ -155,23 +155,48 @@ export class MalClient {
   async getUserList(
     username: string,
     status?: string,
-    limit = 25
+    limit = 100,
+    fetchAll = false
   ): Promise<MalListResponse> {
     if (status !== undefined && !VALID_STATUSES.has(status)) {
       throw new Error(
         `Invalid status "${status}". Valid values: ${[...VALID_STATUSES].join(", ")}`
       );
     }
-    const params: Record<string, string> = {
-      limit: String(Math.min(Math.max(1, limit), 100)),
-      fields: `${LIST_FIELDS},list_status{status,score,num_episodes_watched}`,
-    };
-    if (status !== undefined) {
-      params.status = status;
+
+    const fields = `${LIST_FIELDS},list_status{status,score,num_episodes_watched}`;
+    const path = `/users/${encodeURIComponent(username)}/animelist`;
+
+    if (!fetchAll) {
+      const params: Record<string, string> = {
+        limit: String(Math.min(Math.max(1, limit), 100)),
+        fields,
+      };
+      if (status !== undefined) params.status = status;
+      return this.request(path, params) as Promise<MalListResponse>;
     }
-    return this.request(
-      `/users/${encodeURIComponent(username)}/animelist`,
-      params
-    ) as Promise<MalListResponse>;
+
+    // Paginate until exhausted, hard cap at 2000 entries to avoid runaway requests
+    const allItems: MalListResponse["data"] = [];
+    let offset = 0;
+    const pageSize = 100;
+    const maxEntries = 2000;
+
+    while (allItems.length < maxEntries) {
+      const params: Record<string, string> = {
+        limit: String(pageSize),
+        offset: String(offset),
+        fields,
+      };
+      if (status !== undefined) params.status = status;
+
+      const page = (await this.request(path, params)) as MalListResponse;
+      allItems.push(...page.data);
+
+      if (!page.paging?.next || page.data.length < pageSize) break;
+      offset += pageSize;
+    }
+
+    return { data: allItems };
   }
 }
