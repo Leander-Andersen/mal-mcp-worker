@@ -191,6 +191,7 @@ export class MalClient {
       const params: Record<string, string> = {
         limit: String(Math.min(Math.max(1, limit), 100)),
         fields,
+        nsfw: "true",
       };
       if (status !== undefined) params.status = status;
       return this.request(path, params) as Promise<MalListResponse>;
@@ -206,6 +207,7 @@ export class MalClient {
     const firstUrl = new URL(`${MAL_BASE}${path}`);
     firstUrl.searchParams.set("limit", "50");
     firstUrl.searchParams.set("fields", fields);
+    firstUrl.searchParams.set("nsfw", "true");
     if (status !== undefined) firstUrl.searchParams.set("status", status);
 
     let nextUrl: string | undefined = firstUrl.toString();
