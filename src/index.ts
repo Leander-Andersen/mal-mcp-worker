@@ -1,5 +1,6 @@
 import { MalClient } from "./mal.js";
 import { CORS_HEADERS, handleMcp } from "./mcp.js";
+import { VERSION } from "./version.js";
 
 export interface Env {
   MAL_CLIENT_ID: string;
@@ -22,6 +23,7 @@ export default {
       return Response.json(
         {
           name: "mal-mcp-worker",
+          version: VERSION,
           status: "ok",
           transport: "streamable-http",
           endpoint: "/mcp",

@@ -1,5 +1,6 @@
 import { MalClient } from "./mal.js";
 import { TOOL_DEFINITIONS, callTool } from "./tools.js";
+import { VERSION } from "./version.js";
 
 export const CORS_HEADERS: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -65,7 +66,7 @@ export async function handleMcp(
         result: {
           protocolVersion: "2025-03-26",
           capabilities: { tools: {} },
-          serverInfo: { name: "mal-mcp-worker", version: "1.0.0" },
+          serverInfo: { name: "mal-mcp-worker", version: VERSION },
           instructions:
             "Read-only MyAnimeList v2 tools. Use mal_search_anime to find anime by keyword, mal_get_anime for full details by ID, mal_get_rankings for top anime lists, mal_get_seasonal for seasonal charts, and mal_get_user_list to view a public user's anime list.",
         },
