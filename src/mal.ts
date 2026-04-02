@@ -193,7 +193,7 @@ export class MalClient {
       return this.request(path, params) as Promise<MalListResponse>;
     }
 
-    // Paginate until exhausted, hard cap at 2000 entries to avoid runaway requests
+    // Paginate until exhausted, hard cap at 2000 entries to avoid runaway requests.
     const allItems: MalListResponse["data"] = [];
     let offset = 0;
     const pageSize = 100;
@@ -213,6 +213,9 @@ export class MalClient {
       if (!page.paging?.next) break;
       offset += pageSize;
     }
+
+    // Sort on the Worker side — avoids relying on MAL's sort behaviour across pages.
+    allItems.sort((a, b) => a.node.title.localeCompare(b.node.title));
 
     return { data: allItems };
   }
