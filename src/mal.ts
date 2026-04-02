@@ -196,7 +196,7 @@ export class MalClient {
     // Paginate until exhausted, hard cap at 2000 entries to avoid runaway requests.
     const allItems: MalListResponse["data"] = [];
     let offset = 0;
-    const pageSize = 100;
+    const pageSize = 50; // Smaller pages avoid MAL boundary issues at offset=100
     const maxEntries = 2000;
 
     while (allItems.length < maxEntries) {
