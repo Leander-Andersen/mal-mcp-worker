@@ -3,6 +3,11 @@ const MAL_BASE = "https://api.myanimelist.net/v2";
 const LIST_FIELDS =
   "id,title,synopsis,mean,num_episodes,status,media_type,main_picture";
 
+// Leaner field set for user list — omits synopsis to keep page payloads
+// small and avoid MAL silently truncating results on large lists.
+const USER_LIST_FIELDS =
+  "id,title,mean,num_episodes,status,media_type,main_picture";
+
 const DETAIL_FIELDS = [
   "id",
   "title",
@@ -122,6 +127,18 @@ export class MalClient {
     }) as Promise<MalAnime>;
   }
 
+  // Fetches multiple anime in parallel, batched to avoid hammering the API.
+  // Returns results in the same order as the input ids.
+  async getAnimeBatch(ids: number[], concurrency = 5): Promise<MalAnime[]> {
+    const results: MalAnime[] = [];
+    for (let i = 0; i < ids.length; i += concurrency) {
+      const chunk = ids.slice(i, i + concurrency);
+      const batch = await Promise.all(chunk.map((id) => this.getAnime(id)));
+      results.push(...batch);
+    }
+    return results;
+  }
+
   async getRankings(rankingType = "all", limit = 10): Promise<MalListResponse> {
     if (!VALID_RANKING_TYPES.has(rankingType)) {
       throw new Error(
@@ -164,7 +181,7 @@ export class MalClient {
       );
     }
 
-    const fields = `${LIST_FIELDS},list_status{status,score,num_episodes_watched}`;
+    const fields = `${USER_LIST_FIELDS},list_status{status,score,num_episodes_watched}`;
     const path = `/users/${encodeURIComponent(username)}/animelist`;
 
     if (!fetchAll) {

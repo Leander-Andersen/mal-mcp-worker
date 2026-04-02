@@ -1,19 +1,19 @@
 import { MalClient, MalAnime, MalListResponse, ListStatus } from "./mal.js";
 
+export interface McpToolProperty {
+  type: string;
+  description: string;
+  enum?: string[];
+  items?: { type: string };
+}
+
 export interface McpTool {
   name: string;
   description: string;
   inputSchema: {
     type: "object";
-    properties: Record<
-      string,
-      {
-        type: string;
-        description: string;
-        enum?: string[];
-      }
-    >;
-    required: string[];
+    properties: Record<string, McpToolProperty>;
+    required?: string[];
   };
 }
 
@@ -40,16 +40,21 @@ export const TOOL_DEFINITIONS: McpTool[] = [
   {
     name: "mal_get_anime",
     description:
-      "Get full details for a specific anime by its MyAnimeList ID. Returns title, synopsis, score, rank, popularity, genres, studios, episodes, broadcast info, and more.",
+      "Get full details (including synopsis) for one or more anime by MAL ID. Use 'id' for a single anime or 'ids' for a batch of up to 25. Requests are parallelised automatically. Use this to enrich results from mal_get_user_list or mal_search_anime when synopsis or full details are needed.",
     inputSchema: {
       type: "object",
       properties: {
         id: {
           type: "integer",
-          description: "MyAnimeList anime ID",
+          description: "Single MyAnimeList anime ID",
+        },
+        ids: {
+          type: "array",
+          description:
+            "Array of MyAnimeList anime IDs for batch lookup (max 25)",
+          items: { type: "integer" },
         },
       },
-      required: ["id"],
     },
   },
   {
@@ -110,7 +115,7 @@ export const TOOL_DEFINITIONS: McpTool[] = [
   {
     name: "mal_get_user_list",
     description:
-      "Fetch a public MyAnimeList user's anime list with personal scores. Use fetch_all=true to retrieve the complete list regardless of size (up to 2000 entries). Otherwise returns up to 100 entries.",
+      "Fetch a public MyAnimeList user's anime list with personal scores. Use fetch_all=true to retrieve the complete list (up to 2000 entries). Synopsis is not included in list results — use mal_get_anime with an 'ids' array to batch-fetch full details for specific entries.",
     inputSchema: {
       type: "object",
       properties: {
@@ -164,9 +169,6 @@ function formatAnimeList(res: MalListResponse): string {
         `${i + 1}. ${a.title} (ID: ${a.id})`,
         `   ${scoreStr}${watchStr} | Type: ${a.media_type ?? "?"}`,
         `   Cover: ${cover}`,
-        a.synopsis
-          ? `   Synopsis: ${a.synopsis.slice(0, 200)}${a.synopsis.length > 200 ? "…" : ""}`
-          : "",
       ]
         .filter(Boolean)
         .join("\n");
@@ -220,8 +222,12 @@ export async function callTool(
     }
 
     case "mal_get_anime": {
-      const id = args.id as number;
-      const anime = await mal.getAnime(id);
+      if (Array.isArray(args.ids)) {
+        const ids = (args.ids as number[]).slice(0, 25);
+        const anime = await mal.getAnimeBatch(ids);
+        return anime.map(formatAnimeDetail).join("\n\n---\n\n");
+      }
+      const anime = await mal.getAnime(args.id as number);
       return formatAnimeDetail(anime);
     }
 
