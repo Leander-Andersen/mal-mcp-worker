@@ -193,7 +193,7 @@ export class MalClient {
       const page = (await this.request(path, params)) as MalListResponse;
       allItems.push(...page.data);
 
-      if (!page.paging?.next || page.data.length < pageSize) break;
+      if (!page.paging?.next) break;
       offset += pageSize;
     }
 
