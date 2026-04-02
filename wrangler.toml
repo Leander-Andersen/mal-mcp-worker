@@ -1,0 +1,7 @@
+name = "mal-mcp-worker"
+main = "src/index.ts"
+compatibility_date = "2026-04-02"
+
+# MAL_CLIENT_ID is intentionally NOT listed here.
+# Set it via: wrangler secret put MAL_CLIENT_ID
+# For local dev: copy .dev.vars.example to .dev.vars and fill in your key
