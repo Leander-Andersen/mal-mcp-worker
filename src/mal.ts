@@ -82,16 +82,8 @@ export interface MalListResponse {
 export class MalClient {
   constructor(private readonly clientId: string) {}
 
-  private async request(
-    path: string,
-    params: Record<string, string>
-  ): Promise<unknown> {
-    const url = new URL(`${MAL_BASE}${path}`);
-    for (const [key, value] of Object.entries(params)) {
-      url.searchParams.set(key, value);
-    }
-
-    const response = await fetch(url.toString(), {
+  private async fetchUrl(url: string): Promise<unknown> {
+    const response = await fetch(url, {
       headers: { "X-MAL-Client-ID": this.clientId },
     });
 
@@ -103,7 +95,7 @@ export class MalClient {
         );
       }
       if (response.status === 404) {
-        throw new Error(`Not found (404): ${path}`);
+        throw new Error(`Not found (404): ${url}`);
       }
       throw new Error(
         `MAL API error ${response.status}: ${body || response.statusText}`
@@ -111,6 +103,17 @@ export class MalClient {
     }
 
     return response.json();
+  }
+
+  private async request(
+    path: string,
+    params: Record<string, string>
+  ): Promise<unknown> {
+    const url = new URL(`${MAL_BASE}${path}`);
+    for (const [key, value] of Object.entries(params)) {
+      url.searchParams.set(key, value);
+    }
+    return this.fetchUrl(url.toString());
   }
 
   async searchAnime(query: string, limit = 10): Promise<MalListResponse> {
@@ -193,25 +196,24 @@ export class MalClient {
       return this.request(path, params) as Promise<MalListResponse>;
     }
 
-    // Paginate until exhausted, hard cap at 2000 entries to avoid runaway requests.
+    // Paginate by following MAL's own paging.next URLs directly rather than
+    // manually incrementing offset. MAL may use internal cursors, so trusting
+    // their next-page URL is more reliable than building our own.
     const allItems: MalListResponse["data"] = [];
-    let offset = 0;
-    const pageSize = 50; // Smaller pages avoid MAL boundary issues at offset=100
     const maxEntries = 2000;
 
-    while (allItems.length < maxEntries) {
-      const params: Record<string, string> = {
-        limit: String(pageSize),
-        offset: String(offset),
-        fields,
-      };
-      if (status !== undefined) params.status = status;
+    // Build the first page URL manually
+    const firstUrl = new URL(`${MAL_BASE}${path}`);
+    firstUrl.searchParams.set("limit", "50");
+    firstUrl.searchParams.set("fields", fields);
+    if (status !== undefined) firstUrl.searchParams.set("status", status);
 
-      const page = (await this.request(path, params)) as MalListResponse;
+    let nextUrl: string | undefined = firstUrl.toString();
+
+    while (nextUrl !== undefined && allItems.length < maxEntries) {
+      const page = (await this.fetchUrl(nextUrl)) as MalListResponse;
       allItems.push(...page.data);
-
-      if (!page.paging?.next) break;
-      offset += pageSize;
+      nextUrl = page.paging?.next;
     }
 
     // Sort on the Worker side — avoids relying on MAL's sort behaviour across pages.
