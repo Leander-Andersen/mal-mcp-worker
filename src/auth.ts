@@ -166,17 +166,12 @@ function loginPage(malAuthUrl: string): string {
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg: #181818;
-      --surface: #222;
-      --surface2: #2c2c2c;
-      --border: rgba(255,255,255,.1);
-      --text: #eaeaea;
-      --muted: #9a9a9a;
-      --accent: #e91e8c;
-      --accent-light: #ff85c2;
-      --accent-hover: #ff1493;
-      --btn-pink: #e91e8c;
-      --btn-pink-hover: #ff1493;
+      --bubblegum:  #FFB2B7;
+      --light-pink: #FFD5D8;
+      --highlight:  #FF8F9A;
+      --hot-pink:   #FF6B9D;
+      --deep-rose:  #501928;
+      --rose-shadow: #D88090;
     }
 
     body {
@@ -184,22 +179,16 @@ function loginPage(malAuthUrl: string): string {
       display: flex;
       align-items: center;
       justify-content: center;
-      background: var(--bg);
+      background: var(--light-pink);
       font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
       cursor: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'><text y='24' font-size='24'>🩷</text></svg>") 16 16, auto;
-      background-image:
-        radial-gradient(ellipse at 15% 60%, rgba(233,30,140,.13) 0%, transparent 55%),
-        radial-gradient(ellipse at 85% 15%, rgba(255,20,147,.09) 0%, transparent 50%),
-        radial-gradient(circle at 50% 50%, rgba(255,105,180,.04) 0%, transparent 70%);
-      background-attachment: fixed;
     }
 
-    /* polka dots — straight from overpinku */
     body::before {
       content: '';
       position: fixed;
       inset: 0;
-      background-image: radial-gradient(circle, rgba(255,105,180,.22) 1px, transparent 1px);
+      background-image: radial-gradient(circle, var(--bubblegum) 1.5px, transparent 1.5px);
       background-size: 28px 28px;
       pointer-events: none;
       z-index: 0;
@@ -208,30 +197,27 @@ function loginPage(malAuthUrl: string): string {
     .card {
       position: relative;
       z-index: 1;
-      background: var(--surface);
-      border: 1px solid rgba(233,30,140,.35);
-      border-radius: 24px;
+      background: #fff;
+      border: 2px solid var(--bubblegum);
+      border-radius: 28px;
       padding: 48px 40px 40px;
       width: 100%;
       max-width: 420px;
       text-align: center;
-      box-shadow:
-        0 0 0 1px rgba(233,30,140,.08),
-        0 0 60px rgba(233,30,140,.12),
-        0 20px 40px rgba(0,0,0,.5);
+      box-shadow: 0 6px 0 var(--rose-shadow), 0 12px 32px rgba(80,25,40,.15);
     }
 
     .blossom {
-      width: 68px;
-      height: 68px;
-      background: linear-gradient(135deg, #ff85c2 0%, #e91e8c 100%);
-      border-radius: 18px;
+      width: 72px;
+      height: 72px;
+      background: var(--bubblegum);
+      border-radius: 50%;
       margin: 0 auto 24px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 34px;
-      box-shadow: 0 6px 24px rgba(233,30,140,.5);
+      font-size: 36px;
+      box-shadow: 0 4px 0 var(--highlight);
       animation: heartbeat 1.8s ease-in-out infinite;
       transform-origin: center;
     }
@@ -245,7 +231,7 @@ function loginPage(malAuthUrl: string): string {
     }
 
     h1 {
-      color: var(--text);
+      color: var(--deep-rose);
       font-size: 22px;
       font-weight: 700;
       letter-spacing: -0.3px;
@@ -253,25 +239,25 @@ function loginPage(malAuthUrl: string): string {
     }
 
     .subtitle {
-      color: var(--muted);
+      color: var(--rose-shadow);
       font-size: 14px;
       line-height: 1.6;
       margin-bottom: 28px;
     }
 
     .perms {
-      background: var(--surface2);
-      border: 1px solid rgba(233,30,140,.2);
-      border-radius: 14px;
+      background: var(--light-pink);
+      border: 1.5px solid var(--bubblegum);
+      border-radius: 16px;
       padding: 16px 18px;
       margin-bottom: 24px;
       text-align: left;
     }
 
     .perms-label {
-      color: rgba(255,133,194,.6);
+      color: var(--rose-shadow);
       font-size: 11px;
-      font-weight: 600;
+      font-weight: 700;
       letter-spacing: 0.8px;
       text-transform: uppercase;
       margin-bottom: 10px;
@@ -281,7 +267,7 @@ function loginPage(malAuthUrl: string): string {
       display: flex;
       align-items: center;
       gap: 10px;
-      color: rgba(234,234,234,.75);
+      color: var(--deep-rose);
       font-size: 13px;
       margin-bottom: 7px;
     }
@@ -289,46 +275,49 @@ function loginPage(malAuthUrl: string): string {
     .perm:last-child { margin-bottom: 0; }
 
     .pip {
-      width: 6px;
-      height: 6px;
-      background: var(--accent);
+      width: 7px;
+      height: 7px;
+      background: var(--hot-pink);
       border-radius: 50%;
       flex-shrink: 0;
-      box-shadow: 0 0 6px rgba(233,30,140,.7);
     }
 
     .btn {
       display: block;
       width: 100%;
       padding: 14px;
-      background: var(--btn-pink);
+      background: var(--highlight);
       color: #fff;
       text-decoration: none;
-      border-radius: 12px;
+      border-radius: 14px;
       font-size: 15px;
       font-weight: 700;
       letter-spacing: 0.2px;
-      transition: background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
-      box-shadow: 0 4px 20px rgba(233,30,140,.45);
+      border: none;
+      box-shadow: 0 4px 0 var(--hot-pink);
+      transition: transform 0.1s ease, box-shadow 0.1s ease;
     }
 
     .btn:hover {
-      background: var(--btn-pink-hover);
+      background: var(--hot-pink);
       transform: translateY(-2px);
-      box-shadow: 0 8px 28px rgba(255,20,147,.5);
+      box-shadow: 0 6px 0 #d45085;
     }
 
-    .btn:active { transform: translateY(0); }
+    .btn:active {
+      transform: translateY(2px);
+      box-shadow: 0 2px 0 var(--hot-pink);
+    }
 
     .footer {
       margin-top: 18px;
-      color: rgba(255,255,255,.25);
+      color: var(--rose-shadow);
       font-size: 12px;
       line-height: 1.7;
     }
 
-    .footer a { color: rgba(255,133,194,.45); text-decoration: none; }
-    .footer a:hover { color: rgba(255,133,194,.8); }
+    .footer a { color: var(--hot-pink); text-decoration: none; }
+    .footer a:hover { color: var(--deep-rose); }
   </style>
 </head>
 <body>
@@ -356,7 +345,7 @@ function loginPage(malAuthUrl: string): string {
 
   <script>
     document.addEventListener('click', e => {
-      const colors = ['#ff69b4','#ff1493','#e91e8c','#ff85c2','#c2185b','#ffb3d9'];
+      const colors = ['#FFB2B7','#FF8F9A','#FF6B9D','#FFD5D8','#D88090','#ff85c2'];
       for (let i = 0; i < 6; i++) {
         const heart = document.createElement('span');
         heart.textContent = '♥';
