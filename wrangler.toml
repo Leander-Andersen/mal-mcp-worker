@@ -16,5 +16,5 @@ compatibility_date = "2026-04-02"
 # Then replace the placeholder IDs below with the output from those commands.
 [[kv_namespaces]]
 binding = "MAL_KV"
-id = "REPLACE_WITH_PROD_NAMESPACE_ID"
-preview_id = "REPLACE_WITH_PREVIEW_NAMESPACE_ID"
+id = "d673eb80cb2a47ec8d53e4331bd8caf3"
+preview_id = "d673eb80cb2a47ec8d53e4331bd8caf3"
