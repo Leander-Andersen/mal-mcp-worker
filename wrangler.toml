@@ -1,4 +1,4 @@
-name = "mal-mcp-worker"
+name = "mal-mcp-worker-v2"
 main = "src/index.ts"
 compatibility_date = "2026-04-02"
 
