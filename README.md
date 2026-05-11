@@ -14,7 +14,9 @@ Connect it to Claude.ai (or any MCP client) and ask things like:
 
 ## MCP Tools
 
-### Read-only (no authentication required)
+All tools require OAuth login — the `/mcp` endpoint returns 401 for unauthenticated requests, which triggers the MCP client's login flow automatically.
+
+### Read
 
 | Tool | Description | Required Params |
 |------|-------------|-----------------|
@@ -24,7 +26,7 @@ Connect it to Claude.ai (or any MCP client) and ask things like:
 | `mal_get_seasonal` | Seasonal anime chart | `year`, `season` |
 | `mal_get_user_list` | A public user's anime list with personal scores, start & completion dates | `username` |
 
-### Write (requires OAuth login)
+### Write
 
 | Tool | Description | Required Params |
 |------|-------------|-----------------|
