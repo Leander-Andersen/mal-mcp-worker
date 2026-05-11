@@ -2,6 +2,19 @@ name = "mal-mcp-worker"
 main = "src/index.ts"
 compatibility_date = "2026-04-02"
 
-# MAL_CLIENT_ID is intentionally NOT listed here.
-# Set it via: wrangler secret put MAL_CLIENT_ID
-# For local dev: copy .dev.vars.example to .dev.vars and fill in your key
+# ─── Secrets (set via `wrangler secret put <NAME>`, never commit values) ───────
+# MAL_CLIENT_ID       – MyAnimeList OAuth app client ID
+# MAL_CLIENT_SECRET   – MyAnimeList OAuth app client secret
+# SESSION_SECRET      – 32-byte hex string used to HMAC-sign session tokens
+#                       Generate: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+# For local dev: copy .dev.vars.example to .dev.vars and fill in all three values.
+
+# ─── KV namespace ───────────────────────────────────────────────────────────────
+# Create namespaces with:
+#   wrangler kv namespace create MAL_KV
+#   wrangler kv namespace create MAL_KV --preview
+# Then replace the placeholder IDs below with the output from those commands.
+[[kv_namespaces]]
+binding = "MAL_KV"
+id = "REPLACE_WITH_PROD_NAMESPACE_ID"
+preview_id = "REPLACE_WITH_PREVIEW_NAMESPACE_ID"

@@ -5,7 +5,7 @@ import { VERSION } from "./version.js";
 export const CORS_HEADERS: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Accept, Mcp-Session-Id",
+  "Access-Control-Allow-Headers": "Content-Type, Accept, Mcp-Session-Id, Authorization",
   "Access-Control-Max-Age": "86400",
 };
 
@@ -41,7 +41,9 @@ interface ToolCallParams {
 
 export async function handleMcp(
   request: Request,
-  mal: MalClient
+  mal: MalClient,
+  isAuthenticated: boolean,
+  baseUrl: string
 ): Promise<Response> {
   let message: JsonRpcRequest;
 
@@ -68,7 +70,9 @@ export async function handleMcp(
           capabilities: { tools: {} },
           serverInfo: { name: "mal-mcp-worker", version: VERSION },
           instructions:
-            "Read-only MyAnimeList v2 tools. Use mal_search_anime to find anime by keyword, mal_get_anime for full details by ID, mal_get_rankings for top anime lists, mal_get_seasonal for seasonal charts, and mal_get_user_list to view a public user's anime list.",
+            "MyAnimeList v2 tools. Read-only tools (search, rankings, seasonal, user lists) work without authentication. Write tools (mal_update_anime_status, mal_delete_anime_from_list, mal_get_my_profile) require MAL OAuth — authenticate at " +
+            baseUrl +
+            "/oauth/authorize.",
         },
       },
       sessionId
@@ -93,7 +97,7 @@ export async function handleMcp(
     const toolArgs = params?.arguments ?? {};
 
     try {
-      const text = await callTool(toolName, toolArgs, mal);
+      const text = await callTool(toolName, toolArgs, mal, isAuthenticated);
       return sseResponse({
         jsonrpc: "2.0",
         id,

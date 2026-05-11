@@ -1,4 +1,4 @@
-import { MalClient, MalAnime, MalListResponse, ListStatus } from "./mal.js";
+import { MalClient, MalAnime, MalListResponse, ListStatus, MalUserProfile } from "./mal.js";
 
 export interface McpToolProperty {
   type: string;
@@ -148,6 +148,58 @@ export const TOOL_DEFINITIONS: McpTool[] = [
       required: ["username"],
     },
   },
+  {
+    name: "mal_update_anime_status",
+    description:
+      "Update your MAL list entry for an anime. Requires authentication. Set watch status, personal score (0–10), and/or episodes watched. You can update any combination of fields.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        anime_id: {
+          type: "integer",
+          description: "MAL anime ID",
+        },
+        status: {
+          type: "string",
+          description: "Watch status",
+          enum: ["watching", "completed", "on_hold", "dropped", "plan_to_watch"],
+        },
+        score: {
+          type: "integer",
+          description: "Personal score from 0 (no score) to 10",
+        },
+        num_watched_episodes: {
+          type: "integer",
+          description: "Number of episodes watched",
+        },
+      },
+      required: ["anime_id"],
+    },
+  },
+  {
+    name: "mal_delete_anime_from_list",
+    description: "Remove an anime from your MAL list entirely. Requires authentication.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        anime_id: {
+          type: "integer",
+          description: "MAL anime ID to remove from your list",
+        },
+      },
+      required: ["anime_id"],
+    },
+  },
+  {
+    name: "mal_get_my_profile",
+    description:
+      "Get your own MAL profile and anime statistics (items watching, completed, mean score, etc.). Requires authentication.",
+    inputSchema: {
+      type: "object",
+      properties: {},
+      required: [],
+    },
+  },
 ];
 
 function formatAnimeList(res: MalListResponse): string {
@@ -174,6 +226,25 @@ function formatAnimeList(res: MalListResponse): string {
         .join("\n");
     })
     .join("\n\n");
+}
+
+function formatProfile(p: MalUserProfile): string {
+  const lines: string[] = [];
+  lines.push(`Username: ${p.name}`);
+  lines.push(`MAL ID: ${p.id}`);
+  const s = p.anime_statistics;
+  if (s) {
+    lines.push(`\nAnime Statistics:`);
+    if (s.num_items !== undefined) lines.push(`  Total entries: ${s.num_items}`);
+    if (s.num_items_watching !== undefined) lines.push(`  Watching: ${s.num_items_watching}`);
+    if (s.num_items_completed !== undefined) lines.push(`  Completed: ${s.num_items_completed}`);
+    if (s.num_items_on_hold !== undefined) lines.push(`  On hold: ${s.num_items_on_hold}`);
+    if (s.num_items_dropped !== undefined) lines.push(`  Dropped: ${s.num_items_dropped}`);
+    if (s.num_items_plan_to_watch !== undefined) lines.push(`  Plan to watch: ${s.num_items_plan_to_watch}`);
+    if (s.num_days_watched !== undefined) lines.push(`  Days watched: ${s.num_days_watched}`);
+    if (s.mean_score !== undefined) lines.push(`  Mean score: ${s.mean_score}`);
+  }
+  return lines.join("\n");
 }
 
 function formatAnimeDetail(a: MalAnime): string {
@@ -211,7 +282,8 @@ function formatAnimeDetail(a: MalAnime): string {
 export async function callTool(
   name: string,
   args: Record<string, unknown>,
-  mal: MalClient
+  mal: MalClient,
+  isAuthenticated: boolean
 ): Promise<string> {
   switch (name) {
     case "mal_search_anime": {
@@ -257,6 +329,44 @@ export async function callTool(
         ? `\nTotal entries fetched: ${res.data.length}\n`
         : "";
       return totalNote + formatAnimeList(res);
+    }
+
+    case "mal_update_anime_status": {
+      if (!isAuthenticated) {
+        throw new Error("This tool requires authentication. Please connect your MAL account via OAuth.");
+      }
+      const animeId = args.anime_id as number;
+      const updates = {
+        status: typeof args.status === "string" ? args.status : undefined,
+        score: typeof args.score === "number" ? args.score : undefined,
+        num_watched_episodes:
+          typeof args.num_watched_episodes === "number" ? args.num_watched_episodes : undefined,
+      };
+      const result = await mal.updateAnimeListStatus(animeId, updates);
+      return [
+        `Updated anime ${animeId}:`,
+        `  Status: ${result.status}`,
+        `  Score: ${result.score}`,
+        `  Episodes watched: ${result.num_episodes_watched}`,
+        `  Updated at: ${result.updated_at}`,
+      ].join("\n");
+    }
+
+    case "mal_delete_anime_from_list": {
+      if (!isAuthenticated) {
+        throw new Error("This tool requires authentication. Please connect your MAL account via OAuth.");
+      }
+      const animeId = args.anime_id as number;
+      await mal.deleteAnimeFromList(animeId);
+      return `Anime ${animeId} has been removed from your list.`;
+    }
+
+    case "mal_get_my_profile": {
+      if (!isAuthenticated) {
+        throw new Error("This tool requires authentication. Please connect your MAL account via OAuth.");
+      }
+      const profile = await mal.getMyProfile();
+      return formatProfile(profile);
     }
 
     default:

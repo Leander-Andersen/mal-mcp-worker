@@ -79,19 +79,49 @@ export interface MalListResponse {
   paging?: { next?: string };
 }
 
+export interface ListStatusResponse {
+  status: string;
+  score: number;
+  num_episodes_watched: number;
+  is_rewatching: boolean;
+  updated_at: string;
+}
+
+export interface MalUserProfile {
+  id: number;
+  name: string;
+  anime_statistics?: {
+    num_items_watching?: number;
+    num_items_completed?: number;
+    num_items_on_hold?: number;
+    num_items_dropped?: number;
+    num_items_plan_to_watch?: number;
+    num_items?: number;
+    num_days_watched?: number;
+    mean_score?: number;
+  };
+}
+
 export class MalClient {
-  constructor(private readonly clientId: string) {}
+  constructor(
+    private readonly clientId: string,
+    private readonly accessToken?: string
+  ) {}
 
   private async fetchUrl(url: string): Promise<unknown> {
-    const response = await fetch(url, {
-      headers: { "X-MAL-Client-ID": this.clientId },
-    });
+    const headers: Record<string, string> = this.accessToken
+      ? { Authorization: `Bearer ${this.accessToken}` }
+      : { "X-MAL-Client-ID": this.clientId };
+
+    const response = await fetch(url, { headers });
 
     if (!response.ok) {
       const body = await response.text().catch(() => "");
       if (response.status === 401) {
         throw new Error(
-          `MAL API authentication failed (401). Check your MAL_CLIENT_ID.`
+          this.accessToken
+            ? `MAL API authentication failed (401). Your session may have expired.`
+            : `MAL API authentication failed (401). Check your MAL_CLIENT_ID.`
         );
       }
       if (response.status === 404) {
@@ -103,6 +133,27 @@ export class MalClient {
     }
 
     return response.json();
+  }
+
+  private async mutate(method: string, url: string, body?: URLSearchParams): Promise<unknown> {
+    if (!this.accessToken) {
+      throw new Error("This operation requires authentication. Please connect your MAL account.");
+    }
+    const init: RequestInit = {
+      method,
+      headers: { Authorization: `Bearer ${this.accessToken}` },
+    };
+    if (body) {
+      (init.headers as Record<string, string>)["Content-Type"] = "application/x-www-form-urlencoded";
+      init.body = body;
+    }
+    const response = await fetch(url, init);
+    if (!response.ok) {
+      const text = await response.text().catch(() => "");
+      throw new Error(`MAL API error ${response.status}: ${text || response.statusText}`);
+    }
+    const text = await response.text();
+    return text ? JSON.parse(text) : null;
   }
 
   private async request(
@@ -222,5 +273,26 @@ export class MalClient {
     allItems.sort((a, b) => a.node.title.localeCompare(b.node.title));
 
     return { data: allItems };
+  }
+
+  async updateAnimeListStatus(
+    id: number,
+    updates: { status?: string; score?: number; num_watched_episodes?: number }
+  ): Promise<ListStatusResponse> {
+    const body = new URLSearchParams();
+    if (updates.status !== undefined) body.set("status", updates.status);
+    if (updates.score !== undefined) body.set("score", String(updates.score));
+    if (updates.num_watched_episodes !== undefined) {
+      body.set("num_watched_episodes", String(updates.num_watched_episodes));
+    }
+    return this.mutate("PATCH", `${MAL_BASE}/anime/${id}/my_list_status`, body) as Promise<ListStatusResponse>;
+  }
+
+  async deleteAnimeFromList(id: number): Promise<void> {
+    await this.mutate("DELETE", `${MAL_BASE}/anime/${id}/my_list_status`);
+  }
+
+  async getMyProfile(): Promise<MalUserProfile> {
+    return this.request("/users/@me", { fields: "anime_statistics" }) as Promise<MalUserProfile>;
   }
 }
