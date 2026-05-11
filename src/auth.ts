@@ -150,7 +150,178 @@ export async function handleAuthorize(request: Request, env: AuthEnv): Promise<R
   malAuthUrl.searchParams.set("code_challenge_method", "plain");
   malAuthUrl.searchParams.set("redirect_uri", `${baseUrl}/auth/callback`);
 
-  return Response.redirect(malAuthUrl.toString(), 302);
+  return new Response(loginPage(malAuthUrl.toString()), {
+    headers: { "Content-Type": "text/html; charset=utf-8" },
+  });
+}
+
+function loginPage(malAuthUrl: string): string {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Connect MyAnimeList</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #0e0a14;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background-image:
+        radial-gradient(ellipse at 15% 60%, rgba(255, 105, 180, 0.18) 0%, transparent 55%),
+        radial-gradient(ellipse at 85% 15%, rgba(210, 60, 160, 0.12) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 100%, rgba(180, 40, 140, 0.08) 0%, transparent 50%);
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.04);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 120, 190, 0.25);
+      border-radius: 28px;
+      padding: 52px 44px 44px;
+      width: 100%;
+      max-width: 420px;
+      text-align: center;
+      box-shadow:
+        0 0 0 1px rgba(255, 105, 180, 0.05),
+        0 0 80px rgba(255, 105, 180, 0.08),
+        0 24px 48px rgba(0, 0, 0, 0.5);
+    }
+
+    .blossom {
+      width: 72px;
+      height: 72px;
+      background: linear-gradient(135deg, #ff85c8 0%, #d63faa 100%);
+      border-radius: 20px;
+      margin: 0 auto 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      box-shadow: 0 8px 32px rgba(255, 105, 180, 0.45), 0 2px 8px rgba(0,0,0,0.3);
+      transform: rotate(-4deg);
+    }
+
+    h1 {
+      color: #fff;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      margin-bottom: 10px;
+    }
+
+    .subtitle {
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 14px;
+      line-height: 1.6;
+      margin-bottom: 32px;
+    }
+
+    .perms {
+      background: rgba(255, 105, 180, 0.07);
+      border: 1px solid rgba(255, 105, 180, 0.18);
+      border-radius: 16px;
+      padding: 18px 20px;
+      margin-bottom: 28px;
+      text-align: left;
+    }
+
+    .perms-label {
+      color: rgba(255, 180, 220, 0.6);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    .perm {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: rgba(255, 255, 255, 0.75);
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+
+    .perm:last-child { margin-bottom: 0; }
+
+    .pip {
+      width: 6px;
+      height: 6px;
+      background: linear-gradient(135deg, #ff85c8, #d63faa);
+      border-radius: 50%;
+      flex-shrink: 0;
+      box-shadow: 0 0 6px rgba(255, 105, 180, 0.6);
+    }
+
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 15px;
+      background: linear-gradient(135deg, #ff85c8 0%, #d63faa 100%);
+      color: #fff;
+      text-decoration: none;
+      border-radius: 14px;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      box-shadow: 0 4px 24px rgba(255, 105, 180, 0.45), 0 1px 4px rgba(0,0,0,0.3);
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(255, 105, 180, 0.55), 0 2px 8px rgba(0,0,0,0.3);
+    }
+
+    .btn:active { transform: translateY(0); }
+
+    .footer {
+      margin-top: 20px;
+      color: rgba(255, 255, 255, 0.25);
+      font-size: 12px;
+      line-height: 1.7;
+    }
+
+    .footer a {
+      color: rgba(255, 150, 210, 0.5);
+      text-decoration: none;
+    }
+
+    .footer a:hover { color: rgba(255, 150, 210, 0.8); }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="blossom">🌸</div>
+    <h1>Connect MyAnimeList</h1>
+    <p class="subtitle">Sign in with your MAL account to give Claude<br>access to your anime list.</p>
+
+    <div class="perms">
+      <div class="perms-label">This will allow Claude to</div>
+      <div class="perm"><span class="pip"></span> Read your anime list & profile</div>
+      <div class="perm"><span class="pip"></span> Update watch status & scores</div>
+      <div class="perm"><span class="pip"></span> Set start & completion dates</div>
+      <div class="perm"><span class="pip"></span> Add & remove anime from your list</div>
+    </div>
+
+    <a href="${malAuthUrl}" class="btn">Sign in with MyAnimeList</a>
+
+    <p class="footer">
+      You'll be redirected to MyAnimeList to authorize.<br>
+      Your password is never seen by this app.<br>
+      <a href="https://myanimelist.net" target="_blank">myanimelist.net</a>
+    </p>
+  </div>
+</body>
+</html>`;
 }
 
 // --- Callback endpoint ---
