@@ -172,6 +172,14 @@ export const TOOL_DEFINITIONS: McpTool[] = [
           type: "integer",
           description: "Number of episodes watched",
         },
+        start_date: {
+          type: "string",
+          description: "Date started watching (YYYY-MM-DD)",
+        },
+        finish_date: {
+          type: "string",
+          description: "Date completed (YYYY-MM-DD)",
+        },
       },
       required: ["anime_id"],
     },
@@ -215,7 +223,7 @@ function formatAnimeList(res: MalListResponse): string {
         ? `Your score: ${ls.score ?? "–"} | Global score: ${a.mean ?? "N/A"}`
         : `Score: ${a.mean ?? "N/A"}`;
       const watchStr = ls
-        ? ` | Watch status: ${ls.status ?? "?"} | Watched: ${ls.num_episodes_watched ?? 0}/${a.num_episodes ?? "?"} eps`
+        ? ` | Watch status: ${ls.status ?? "?"} | Watched: ${ls.num_episodes_watched ?? 0}/${a.num_episodes ?? "?"} eps${ls.start_date ? ` | Started: ${ls.start_date}` : ""}${ls.finish_date ? ` | Completed: ${ls.finish_date}` : ""}`
         : ` | Episodes: ${a.num_episodes ?? "?"} | Status: ${a.status ?? "?"}`;
       return [
         `${i + 1}. ${a.title} (ID: ${a.id})`,
@@ -341,6 +349,8 @@ export async function callTool(
         score: typeof args.score === "number" ? args.score : undefined,
         num_watched_episodes:
           typeof args.num_watched_episodes === "number" ? args.num_watched_episodes : undefined,
+        start_date: typeof args.start_date === "string" ? args.start_date : undefined,
+        finish_date: typeof args.finish_date === "string" ? args.finish_date : undefined,
       };
       const result = await mal.updateAnimeListStatus(animeId, updates);
       return [

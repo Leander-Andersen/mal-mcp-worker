@@ -72,6 +72,8 @@ export interface ListStatus {
   status?: string;
   score?: number;
   num_episodes_watched?: number;
+  start_date?: string;
+  finish_date?: string;
 }
 
 export interface MalListResponse {
@@ -235,7 +237,7 @@ export class MalClient {
       );
     }
 
-    const fields = `${USER_LIST_FIELDS},list_status{status,score,num_episodes_watched}`;
+    const fields = `${USER_LIST_FIELDS},list_status{status,score,num_episodes_watched,start_date,finish_date}`;
     const path = `/users/${encodeURIComponent(username)}/animelist`;
 
     if (!fetchAll) {
@@ -277,7 +279,7 @@ export class MalClient {
 
   async updateAnimeListStatus(
     id: number,
-    updates: { status?: string; score?: number; num_watched_episodes?: number }
+    updates: { status?: string; score?: number; num_watched_episodes?: number; start_date?: string; finish_date?: string }
   ): Promise<ListStatusResponse> {
     const body = new URLSearchParams();
     if (updates.status !== undefined) body.set("status", updates.status);
@@ -285,6 +287,8 @@ export class MalClient {
     if (updates.num_watched_episodes !== undefined) {
       body.set("num_watched_episodes", String(updates.num_watched_episodes));
     }
+    if (updates.start_date !== undefined) body.set("start_date", updates.start_date);
+    if (updates.finish_date !== undefined) body.set("finish_date", updates.finish_date);
     return this.mutate("PATCH", `${MAL_BASE}/anime/${id}/my_list_status`, body) as Promise<ListStatusResponse>;
   }
 
