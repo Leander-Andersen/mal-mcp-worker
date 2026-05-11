@@ -45,19 +45,25 @@ export default {
       return handleRevoke(request, env);
     }
 
-    // MCP endpoint
+    // MCP endpoint — requires authentication
     if (request.method === "POST" && url.pathname === "/mcp") {
       let session = null;
       try {
         session = await resolveSession(request, env);
       } catch {
-        // Refresh token expired — signal re-auth
-        return new Response(null, { status: 401, headers: CORS_HEADERS });
+        // Refresh token expired — force re-auth
       }
-      const mal = session
-        ? new MalClient(env.MAL_CLIENT_ID, session.mal_access_token)
-        : new MalClient(env.MAL_CLIENT_ID);
-      return handleMcp(request, mal, session !== null, baseUrl);
+      if (!session) {
+        return new Response(null, {
+          status: 401,
+          headers: {
+            ...CORS_HEADERS,
+            "WWW-Authenticate": `Bearer realm="${baseUrl}", resource_metadata="${baseUrl}/.well-known/oauth-authorization-server"`,
+          },
+        });
+      }
+      const mal = new MalClient(env.MAL_CLIENT_ID, session.mal_access_token);
+      return handleMcp(request, mal, true, baseUrl);
     }
 
     // Health check
