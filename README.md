@@ -10,13 +10,47 @@ Connect it to Claude.ai (or any MCP client) and ask things like:
 
 ## MCP Tools
 
+<<<<<<< Updated upstream
+=======
+All tools require OAuth login — the `/mcp` endpoint returns 401 for unauthenticated requests, which triggers the MCP client's login flow automatically.
+
+### Read — Anime
+
+>>>>>>> Stashed changes
 | Tool | Description | Required Params |
 |------|-------------|-----------------|
 | `mal_search_anime` | Search anime by keyword | `query` |
 | `mal_get_anime` | Full details for an anime by ID | `id` |
 | `mal_get_rankings` | Top anime by ranking type | — |
 | `mal_get_seasonal` | Seasonal anime chart | `year`, `season` |
+<<<<<<< Updated upstream
 | `mal_get_user_list` | A public user's anime list with personal scores | `username` |
+=======
+| `mal_get_user_list` | A public user's anime list with personal scores, start & completion dates | `username` |
+
+### Read — Manga & Light Novels
+
+Covers manga, light novels, novels, manhwa, manhua, one-shots and doujinshi — check each result's `media_type` to tell formats apart.
+
+| Tool | Description | Required Params |
+|------|-------------|-----------------|
+| `mal_search_manga` | Search manga / light novels by keyword | `query` |
+| `mal_get_manga` | Full details (authors, serialization) for one or more entries by ID | `id` or `ids[]` |
+| `mal_get_manga_rankings` | Top manga by ranking type (use `novels` for light novels) | — |
+| `mal_get_user_manga_list` | A public user's manga list with personal scores, start & completion dates | `username` |
+
+### Write
+
+| Tool | Description | Required Params |
+|------|-------------|-----------------|
+| `mal_update_anime_status` | Update status, score, episodes watched, start/finish dates | `anime_id` |
+| `mal_delete_anime_from_list` | Remove an anime from your list | `anime_id` |
+| `mal_update_manga_status` | Update status, score, chapters/volumes read, start/finish dates | `manga_id` |
+| `mal_delete_manga_from_list` | Remove a manga from your list | `manga_id` |
+| `mal_get_my_profile` | Your MAL profile and anime statistics | — |
+>>>>>>> Stashed changes
+
+> **Notes:** MAL has no seasonal chart for manga, and its profile endpoint only exposes anime statistics — so there is no `mal_get_seasonal` or manga-statistics equivalent.
 
 ---
 
