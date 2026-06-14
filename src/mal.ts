@@ -119,6 +119,8 @@ export interface ListStatus {
   status?: string;
   score?: number;
   num_episodes_watched?: number;
+  start_date?: string;
+  finish_date?: string;
 }
 
 export interface MalListResponse {
@@ -126,8 +128,6 @@ export interface MalListResponse {
   paging?: { next?: string };
 }
 
-<<<<<<< Updated upstream
-=======
 export interface ListStatusResponse {
   status: string;
   score: number;
@@ -196,20 +196,26 @@ export interface MangaListStatusResponse {
   updated_at: string;
 }
 
->>>>>>> Stashed changes
 export class MalClient {
-  constructor(private readonly clientId: string) {}
+  constructor(
+    private readonly clientId: string,
+    private readonly accessToken?: string
+  ) {}
 
   private async fetchUrl(url: string): Promise<unknown> {
-    const response = await fetch(url, {
-      headers: { "X-MAL-Client-ID": this.clientId },
-    });
+    const headers: Record<string, string> = this.accessToken
+      ? { Authorization: `Bearer ${this.accessToken}` }
+      : { "X-MAL-Client-ID": this.clientId };
+
+    const response = await fetch(url, { headers });
 
     if (!response.ok) {
       const body = await response.text().catch(() => "");
       if (response.status === 401) {
         throw new Error(
-          `MAL API authentication failed (401). Check your MAL_CLIENT_ID.`
+          this.accessToken
+            ? `MAL API authentication failed (401). Your session may have expired.`
+            : `MAL API authentication failed (401). Check your MAL_CLIENT_ID.`
         );
       }
       if (response.status === 404) {
@@ -221,6 +227,27 @@ export class MalClient {
     }
 
     return response.json();
+  }
+
+  private async mutate(method: string, url: string, body?: URLSearchParams): Promise<unknown> {
+    if (!this.accessToken) {
+      throw new Error("This operation requires authentication. Please connect your MAL account.");
+    }
+    const init: RequestInit = {
+      method,
+      headers: { Authorization: `Bearer ${this.accessToken}` },
+    };
+    if (body) {
+      (init.headers as Record<string, string>)["Content-Type"] = "application/x-www-form-urlencoded";
+      init.body = body;
+    }
+    const response = await fetch(url, init);
+    if (!response.ok) {
+      const text = await response.text().catch(() => "");
+      throw new Error(`MAL API error ${response.status}: ${text || response.statusText}`);
+    }
+    const text = await response.text();
+    return text ? JSON.parse(text) : null;
   }
 
   private async request(
@@ -302,7 +329,7 @@ export class MalClient {
       );
     }
 
-    const fields = `${USER_LIST_FIELDS},list_status{status,score,num_episodes_watched}`;
+    const fields = `${USER_LIST_FIELDS},list_status{status,score,num_episodes_watched,start_date,finish_date}`;
     const path = `/users/${encodeURIComponent(username)}/animelist`;
 
     if (!fetchAll) {
@@ -341,8 +368,6 @@ export class MalClient {
 
     return { data: allItems };
   }
-<<<<<<< Updated upstream
-=======
 
   async updateAnimeListStatus(
     id: number,
@@ -479,5 +504,4 @@ export class MalClient {
   async deleteMangaFromList(id: number): Promise<void> {
     await this.mutate("DELETE", `${MAL_BASE}/manga/${id}/my_list_status`);
   }
->>>>>>> Stashed changes
 }

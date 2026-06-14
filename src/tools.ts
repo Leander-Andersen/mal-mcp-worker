@@ -1,6 +1,3 @@
-<<<<<<< Updated upstream
-import { MalClient, MalAnime, MalListResponse, ListStatus } from "./mal.js";
-=======
 import {
   MalClient,
   MalAnime,
@@ -11,7 +8,6 @@ import {
   MangaListResponse,
   MangaListStatus,
 } from "./mal.js";
->>>>>>> Stashed changes
 
 export interface McpToolProperty {
   type: string;
@@ -161,8 +157,6 @@ export const TOOL_DEFINITIONS: McpTool[] = [
       required: ["username"],
     },
   },
-<<<<<<< Updated upstream
-=======
   {
     name: "mal_update_anime_status",
     description:
@@ -382,7 +376,6 @@ export const TOOL_DEFINITIONS: McpTool[] = [
       required: ["manga_id"],
     },
   },
->>>>>>> Stashed changes
 ];
 
 function formatAnimeList(res: MalListResponse): string {
@@ -398,7 +391,7 @@ function formatAnimeList(res: MalListResponse): string {
         ? `Your score: ${ls.score ?? "–"} | Global score: ${a.mean ?? "N/A"}`
         : `Score: ${a.mean ?? "N/A"}`;
       const watchStr = ls
-        ? ` | Watch status: ${ls.status ?? "?"} | Watched: ${ls.num_episodes_watched ?? 0}/${a.num_episodes ?? "?"} eps`
+        ? ` | Watch status: ${ls.status ?? "?"} | Watched: ${ls.num_episodes_watched ?? 0}/${a.num_episodes ?? "?"} eps${ls.start_date ? ` | Started: ${ls.start_date}` : ""}${ls.finish_date ? ` | Completed: ${ls.finish_date}` : ""}`
         : ` | Episodes: ${a.num_episodes ?? "?"} | Status: ${a.status ?? "?"}`;
       return [
         `${i + 1}. ${a.title} (ID: ${a.id})`,
@@ -409,6 +402,25 @@ function formatAnimeList(res: MalListResponse): string {
         .join("\n");
     })
     .join("\n\n");
+}
+
+function formatProfile(p: MalUserProfile): string {
+  const lines: string[] = [];
+  lines.push(`Username: ${p.name}`);
+  lines.push(`MAL ID: ${p.id}`);
+  const s = p.anime_statistics;
+  if (s) {
+    lines.push(`\nAnime Statistics:`);
+    if (s.num_items !== undefined) lines.push(`  Total entries: ${s.num_items}`);
+    if (s.num_items_watching !== undefined) lines.push(`  Watching: ${s.num_items_watching}`);
+    if (s.num_items_completed !== undefined) lines.push(`  Completed: ${s.num_items_completed}`);
+    if (s.num_items_on_hold !== undefined) lines.push(`  On hold: ${s.num_items_on_hold}`);
+    if (s.num_items_dropped !== undefined) lines.push(`  Dropped: ${s.num_items_dropped}`);
+    if (s.num_items_plan_to_watch !== undefined) lines.push(`  Plan to watch: ${s.num_items_plan_to_watch}`);
+    if (s.num_days_watched !== undefined) lines.push(`  Days watched: ${s.num_days_watched}`);
+    if (s.mean_score !== undefined) lines.push(`  Mean score: ${s.mean_score}`);
+  }
+  return lines.join("\n");
 }
 
 function formatAnimeDetail(a: MalAnime): string {
@@ -514,7 +526,8 @@ function formatMangaDetail(m: MalManga): string {
 export async function callTool(
   name: string,
   args: Record<string, unknown>,
-  mal: MalClient
+  mal: MalClient,
+  isAuthenticated: boolean
 ): Promise<string> {
   switch (name) {
     case "mal_search_anime": {
@@ -562,8 +575,6 @@ export async function callTool(
       return totalNote + formatAnimeList(res);
     }
 
-<<<<<<< Updated upstream
-=======
     case "mal_update_anime_status": {
       if (!isAuthenticated) {
         throw new Error("This tool requires authentication. Please connect your MAL account via OAuth.");
@@ -676,7 +687,6 @@ export async function callTool(
       return `Manga ${mangaId} has been removed from your list.`;
     }
 
->>>>>>> Stashed changes
     default:
       throw new Error(`Unknown tool: "${name}"`);
   }
