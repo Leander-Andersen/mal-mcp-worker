@@ -27,6 +27,33 @@ const DETAIL_FIELDS = [
   "broadcast",
 ].join(",");
 
+const MANGA_LIST_FIELDS =
+  "id,title,synopsis,mean,num_volumes,num_chapters,status,media_type,main_picture";
+
+// Leaner field set for user list — omits synopsis to keep page payloads
+// small and avoid MAL silently truncating results on large lists.
+const MANGA_USER_LIST_FIELDS =
+  "id,title,mean,num_volumes,num_chapters,status,media_type,main_picture";
+
+const MANGA_DETAIL_FIELDS = [
+  "id",
+  "title",
+  "alternative_titles",
+  "synopsis",
+  "mean",
+  "rank",
+  "popularity",
+  "num_volumes",
+  "num_chapters",
+  "status",
+  "media_type",
+  "genres",
+  "authors{first_name,last_name}",
+  "main_picture",
+  "source",
+  "serialization",
+].join(",");
+
 const VALID_RANKING_TYPES = new Set([
   "all",
   "airing",
@@ -47,6 +74,26 @@ const VALID_STATUSES = new Set([
   "on_hold",
   "dropped",
   "plan_to_watch",
+]);
+
+const VALID_MANGA_RANKING_TYPES = new Set([
+  "all",
+  "manga",
+  "novels",
+  "oneshots",
+  "doujin",
+  "manhwa",
+  "manhua",
+  "bypopularity",
+  "favorite",
+]);
+
+const VALID_MANGA_STATUSES = new Set([
+  "reading",
+  "completed",
+  "on_hold",
+  "dropped",
+  "plan_to_read",
 ]);
 
 export interface MalAnime {
@@ -102,6 +149,51 @@ export interface MalUserProfile {
     num_days_watched?: number;
     mean_score?: number;
   };
+}
+
+export interface MalManga {
+  id: number;
+  title: string;
+  synopsis?: string;
+  mean?: number;
+  num_volumes?: number;
+  num_chapters?: number;
+  status?: string;
+  media_type?: string;
+  genres?: Array<{ id: number; name: string }>;
+  authors?: Array<{
+    node: { id?: number; first_name?: string; last_name?: string };
+    role?: string;
+  }>;
+  main_picture?: { medium: string; large: string };
+  alternative_titles?: { en?: string; ja?: string; synonyms?: string[] };
+  rank?: number;
+  popularity?: number;
+  source?: string;
+  serialization?: Array<{ node: { id?: number; name: string } }>;
+}
+
+export interface MangaListStatus {
+  status?: string;
+  score?: number;
+  num_volumes_read?: number;
+  num_chapters_read?: number;
+  start_date?: string;
+  finish_date?: string;
+}
+
+export interface MangaListResponse {
+  data: Array<{ node: MalManga; list_status?: MangaListStatus }>;
+  paging?: { next?: string };
+}
+
+export interface MangaListStatusResponse {
+  status: string;
+  score: number;
+  num_volumes_read: number;
+  num_chapters_read: number;
+  is_rereading: boolean;
+  updated_at: string;
 }
 
 export class MalClient {
@@ -298,5 +390,118 @@ export class MalClient {
 
   async getMyProfile(): Promise<MalUserProfile> {
     return this.request("/users/@me", { fields: "anime_statistics" }) as Promise<MalUserProfile>;
+  }
+
+  async searchManga(query: string, limit = 10): Promise<MangaListResponse> {
+    return this.request("/manga", {
+      q: query,
+      limit: String(Math.min(Math.max(1, limit), 100)),
+      fields: MANGA_LIST_FIELDS,
+    }) as Promise<MangaListResponse>;
+  }
+
+  async getManga(id: number): Promise<MalManga> {
+    return this.request(`/manga/${id}`, {
+      fields: MANGA_DETAIL_FIELDS,
+    }) as Promise<MalManga>;
+  }
+
+  // Fetches multiple manga in parallel, batched to avoid hammering the API.
+  // Returns results in the same order as the input ids.
+  async getMangaBatch(ids: number[], concurrency = 5): Promise<MalManga[]> {
+    const results: MalManga[] = [];
+    for (let i = 0; i < ids.length; i += concurrency) {
+      const chunk = ids.slice(i, i + concurrency);
+      const batch = await Promise.all(chunk.map((id) => this.getManga(id)));
+      results.push(...batch);
+    }
+    return results;
+  }
+
+  async getMangaRankings(rankingType = "all", limit = 10): Promise<MangaListResponse> {
+    if (!VALID_MANGA_RANKING_TYPES.has(rankingType)) {
+      throw new Error(
+        `Invalid ranking_type "${rankingType}". Valid values: ${[...VALID_MANGA_RANKING_TYPES].join(", ")}`
+      );
+    }
+    return this.request("/manga/ranking", {
+      ranking_type: rankingType,
+      limit: String(Math.min(Math.max(1, limit), 100)),
+      fields: MANGA_LIST_FIELDS,
+    }) as Promise<MangaListResponse>;
+  }
+
+  async getUserMangaList(
+    username: string,
+    status?: string,
+    limit = 100,
+    fetchAll = false
+  ): Promise<MangaListResponse> {
+    if (status !== undefined && !VALID_MANGA_STATUSES.has(status)) {
+      throw new Error(
+        `Invalid status "${status}". Valid values: ${[...VALID_MANGA_STATUSES].join(", ")}`
+      );
+    }
+
+    const fields = `${MANGA_USER_LIST_FIELDS},list_status{status,score,num_volumes_read,num_chapters_read,start_date,finish_date}`;
+    const path = `/users/${encodeURIComponent(username)}/mangalist`;
+
+    if (!fetchAll) {
+      const params: Record<string, string> = {
+        limit: String(Math.min(Math.max(1, limit), 100)),
+        fields,
+        nsfw: "true",
+      };
+      if (status !== undefined) params.status = status;
+      return this.request(path, params) as Promise<MangaListResponse>;
+    }
+
+    // Paginate by following MAL's own paging.next URLs directly rather than
+    // manually incrementing offset. MAL may use internal cursors, so trusting
+    // their next-page URL is more reliable than building our own.
+    const allItems: MangaListResponse["data"] = [];
+    const maxEntries = 2000;
+
+    // Build the first page URL manually
+    const firstUrl = new URL(`${MAL_BASE}${path}`);
+    firstUrl.searchParams.set("limit", "50");
+    firstUrl.searchParams.set("fields", fields);
+    firstUrl.searchParams.set("nsfw", "true");
+    if (status !== undefined) firstUrl.searchParams.set("status", status);
+
+    let nextUrl: string | undefined = firstUrl.toString();
+
+    while (nextUrl !== undefined && allItems.length < maxEntries) {
+      const page = (await this.fetchUrl(nextUrl)) as MangaListResponse;
+      allItems.push(...page.data);
+      nextUrl = page.paging?.next;
+    }
+
+    // Sort on the Worker side — avoids relying on MAL's sort behaviour across pages.
+    allItems.sort((a, b) => a.node.title.localeCompare(b.node.title));
+
+    return { data: allItems };
+  }
+
+  async updateMangaListStatus(
+    id: number,
+    updates: { status?: string; score?: number; num_volumes_read?: number; num_chapters_read?: number; start_date?: string; finish_date?: string }
+  ): Promise<MangaListStatusResponse> {
+    const body = new URLSearchParams();
+    if (updates.status !== undefined) body.set("status", updates.status);
+    if (updates.score !== undefined) body.set("score", String(updates.score));
+    if (updates.num_volumes_read !== undefined) {
+      body.set("num_volumes_read", String(updates.num_volumes_read));
+    }
+    if (updates.num_chapters_read !== undefined) {
+      body.set("num_chapters_read", String(updates.num_chapters_read));
+    }
+    if (updates.start_date !== undefined) body.set("start_date", updates.start_date);
+    if (updates.finish_date !== undefined) body.set("finish_date", updates.finish_date);
+    return this.mutate("PATCH", `${MAL_BASE}/manga/${id}/my_list_status`, body) as Promise<MangaListStatusResponse>;
+  }
+
+  async deleteMangaFromList(id: number): Promise<void> {
+    await this.mutate("DELETE", `${MAL_BASE}/manga/${id}/my_list_status`);
   }
 }
