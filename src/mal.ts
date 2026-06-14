@@ -266,6 +266,7 @@ export class MalClient {
       q: query,
       limit: String(Math.min(Math.max(1, limit), 100)),
       fields: LIST_FIELDS,
+      nsfw: "true",
     }) as Promise<MalListResponse>;
   }
 
@@ -297,6 +298,7 @@ export class MalClient {
       ranking_type: rankingType,
       limit: String(Math.min(Math.max(1, limit), 100)),
       fields: LIST_FIELDS,
+      nsfw: "true",
     }) as Promise<MalListResponse>;
   }
 
@@ -314,6 +316,7 @@ export class MalClient {
       limit: String(Math.min(Math.max(1, limit), 100)),
       fields: LIST_FIELDS,
       sort: "anime_score",
+      nsfw: "true",
     }) as Promise<MalListResponse>;
   }
 
@@ -397,6 +400,7 @@ export class MalClient {
       q: query,
       limit: String(Math.min(Math.max(1, limit), 100)),
       fields: MANGA_LIST_FIELDS,
+      nsfw: "true",
     }) as Promise<MangaListResponse>;
   }
 
@@ -428,6 +432,7 @@ export class MalClient {
       ranking_type: rankingType,
       limit: String(Math.min(Math.max(1, limit), 100)),
       fields: MANGA_LIST_FIELDS,
+      nsfw: "true",
     }) as Promise<MangaListResponse>;
   }
 
