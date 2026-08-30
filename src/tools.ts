@@ -594,7 +594,6 @@ export async function callTool(
         `  Status: ${result.status}`,
         `  Score: ${result.score}`,
         `  Episodes watched: ${result.num_episodes_watched}`,
-        `  Updated at: ${result.updated_at}`,
       ].join("\n");
     }
 
@@ -674,7 +673,6 @@ export async function callTool(
         `  Score: ${result.score}`,
         `  Chapters read: ${result.num_chapters_read}`,
         `  Volumes read: ${result.num_volumes_read}`,
-        `  Updated at: ${result.updated_at}`,
       ].join("\n");
     }
 
