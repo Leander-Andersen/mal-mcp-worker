@@ -11,6 +11,7 @@ import {
   putCode,
   getAndDeleteCode,
 } from "./kv.js";
+import { CONTACT_EMAIL } from "./version.js";
 
 // Minimal env shape needed by auth handlers — avoids circular import with index.ts
 interface AuthEnv {
@@ -391,7 +392,7 @@ export async function handleCallback(request: Request, env: AuthEnv): Promise<Re
   // Exchange authorization code with MAL
   const tokenRes = await fetch(MAL_TOKEN_URL, {
     method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    headers: { "Content-Type": "application/x-www-form-urlencoded", From: CONTACT_EMAIL },
     body: new URLSearchParams({
       grant_type: "authorization_code",
       client_id: env.MAL_CLIENT_ID,
@@ -415,7 +416,7 @@ export async function handleCallback(request: Request, env: AuthEnv): Promise<Re
 
   // Fetch MAL username to store with the session
   const profileRes = await fetch(`${MAL_API_BASE}/users/@me`, {
-    headers: { Authorization: `Bearer ${tokenData.access_token}` },
+    headers: { Authorization: `Bearer ${tokenData.access_token}`, From: CONTACT_EMAIL },
   });
   const profileData = profileRes.ok
     ? ((await profileRes.json()) as { name: string })
@@ -544,7 +545,7 @@ async function refreshMalToken(
 ): Promise<SessionData> {
   const res = await fetch(MAL_TOKEN_URL, {
     method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    headers: { "Content-Type": "application/x-www-form-urlencoded", From: CONTACT_EMAIL },
     body: new URLSearchParams({
       grant_type: "refresh_token",
       refresh_token: session.mal_refresh_token,
