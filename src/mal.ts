@@ -1,3 +1,5 @@
+import { CONTACT_EMAIL } from "./version.js";
+
 const MAL_BASE = "https://api.myanimelist.net/v2";
 
 const LIST_FIELDS =
@@ -204,8 +206,8 @@ export class MalClient {
 
   private async fetchUrl(url: string): Promise<unknown> {
     const headers: Record<string, string> = this.accessToken
-      ? { Authorization: `Bearer ${this.accessToken}` }
-      : { "X-MAL-Client-ID": this.clientId };
+      ? { Authorization: `Bearer ${this.accessToken}`, From: CONTACT_EMAIL }
+      : { "X-MAL-Client-ID": this.clientId, From: CONTACT_EMAIL };
 
     const response = await fetch(url, { headers });
 
@@ -235,7 +237,7 @@ export class MalClient {
     }
     const init: RequestInit = {
       method,
-      headers: { Authorization: `Bearer ${this.accessToken}` },
+      headers: { Authorization: `Bearer ${this.accessToken}`, From: CONTACT_EMAIL },
     };
     if (body) {
       (init.headers as Record<string, string>)["Content-Type"] = "application/x-www-form-urlencoded";
